@@ -1,17 +1,44 @@
-using Unity.Netcode;
 using UnityEngine;
+using Unity.Netcode;
 
 public class PlayerMovement : NetworkBehaviour
 {
-    public float speed = 5f;
+    public CharacterController controller;
+    public float speed = 8f;
+    public float gravity = -9.81f;
+    public float jumpHeight = 3f;
+
+    private Vector3 velocity;
+    private bool isGrounded;
+
+    public Transform groundCheck;
+    public float groundDistance = 0.4f;
+    public LayerMask groundMask;
 
     void Update()
     {
         if (!IsOwner) return;
 
-        float moveX = Input.GetAxis("Horizontal") * speed * Time.deltaTime;
-        float moveZ = Input.GetAxis("Vertical") * speed * Time.deltaTime;
+        isGrounded = Physics.CheckSphere(groundCheck.position, groundDistance, groundMask);
 
-        transform.Translate(new Vector3(moveX, 0f, moveZ));
+        if (isGrounded && velocity.y < 0)
+        {
+            velocity.y = -2f;
+        }
+
+        float x = Input.GetAxis("Horizontal");
+        float z = Input.GetAxis("Vertical");
+
+        Vector3 move = transform.right * x + transform.forward * z;
+        controller.Move(move * speed * Time.deltaTime);
+
+        if (Input.GetButtonDown("Jump") && isGrounded)
+        {
+            velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
+        }
+
+        velocity.y += gravity * Time.deltaTime;
+
+        controller.Move(velocity * Time.deltaTime); 
     }
 }
